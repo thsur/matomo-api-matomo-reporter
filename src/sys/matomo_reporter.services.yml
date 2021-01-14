@@ -1,0 +1,25 @@
+parameters:
+    matomo_reporter.cache: true
+services:
+    logger.channel.matomo_reporter:
+        parent: logger.channel_base
+        arguments: 
+            - 'matomo_reporter'
+    matomo_reporter.storage:
+        class: Drupal\matomo_reporter\Matomo\Storage
+        arguments:
+            - '@file_system'
+    matomo_reporter.client:
+        class: Drupal\matomo_reporter\Matomo\Client
+        arguments:
+            - '@config.factory'
+    matomo_reporter.collector:
+        class: Drupal\matomo_reporter\Matomo\ReportCollector
+        arguments:
+            - '@matomo_reporter.client'
+    matomo_reporter.processor:
+        class: Drupal\matomo_reporter\Matomo\Processor
+        arguments:
+            - '@matomo_reporter.collector'
+            - '@logger.channel.matomo_reporter'
+            - '@database'
