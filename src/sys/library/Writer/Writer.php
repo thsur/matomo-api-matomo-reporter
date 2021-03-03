@@ -9,7 +9,7 @@ class Writer {
      * 
      * @var String
      */
-    private $dir;
+    protected $dir;
 
     /**
      * Delimiter to use in csv files.

@@ -7,6 +7,7 @@ namespace Reporter;
  * Constants
  */
 define('ROOT_DIR',    dirname(__DIR__));
+define('SYS_DIR',     ROOT_DIR.'/sys');
 define('CONFIG_DIR',  ROOT_DIR.'/config');
 define('STORAGE_DIR', ROOT_DIR.'/storage');
 
@@ -24,11 +25,19 @@ use Monolog\Formatter\LineFormatter;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Internal dependencies
  */
 use Writer\Writer;
+
+/**
+ * Helper
+ */
+require_once SYS_DIR.'/library/functions.php';
 
 /**
  * Error & exception handling
@@ -130,204 +139,19 @@ $services->set('logger', $logger);
 $services->set('client', new Client($services->get('config')->get('client.settings')));
 
 /**
+ * Finder
+ */
+$services->set('finder', new Finder());
+
+/**
+ * Filesystem
+ */
+$services->set('fs', new Filesystem());
+
+/**
  * File system storage writer
  */
 $services->set('writer', new Writer(STORAGE_DIR));
-
-/**
- * Helper function to send a request & pre-process its data.
- */
-function retrieve(Client $client, Request $request) {
-
-    // Return early on failed requests
-
-    $data = $client->send($request);
-
-    if ($data['status'] != 200) {
-
-       throw new Exception\Base("Request failed with status code {$data['status']}."); 
-    }
-
-    // Turn JSON to array
-
-    $data['data'] = json_decode($data['data'], true);
-
-    return $data;
-}
-
-function filter(array $data) {
-
-    $filtered = [];
-    $keep     = [
-
-        'nb_visits',
-        'nb_actions',
-        'max_actions',
-        'bounce_count',
-        'sum_visit_length',
-        'Referrers_visitorsFromSearchEngines',
-        'Referrers_visitorsFromSocialNetworks',
-        'Referrers_visitorsFromDirectEntry',
-        'Referrers_visitorsFromWebsites',
-        'Referrers_visitorsFromCampaigns',
-        'Referrers_distinctSearchEngines',
-        'Referrers_distinctSocialNetworks',
-        'Referrers_distinctWebsites',
-        'Referrers_distinctWebsitesUrls',
-        'Referrers_distinctCampaigns',
-        'nb_conversions',
-        'nb_visits_converted',
-        'conversion_rate',
-        'nb_pageviews',
-        'nb_downloads',
-        'nb_uniq_outlinks',
-        'avg_time_generation',
-        'bounce_rate',
-        'nb_actions_per_visit',
-        'avg_time_on_site',
-    ];
-
-    foreach ($data as $k => $v) {
-
-        if (in_array($k, $keep)) {
-
-            $filtered[$k] = $v;
-        }
-    }
-
-    return $filtered;
-}
-function filterSegment(array $data) {
-
-    $filtered = [];
-    $keep     = [
-
-        'nb_uniq_visitors',
-        'nb_visits',
-        'nb_users',
-        'nb_actions',
-        'max_actions',
-        'bounce_count',
-        'sum_visit_length',
-        'nb_visits_new',
-        'nb_actions_new',
-        'nb_uniq_visitors_new',
-        'nb_users_new',
-        'max_actions_new',
-        'bounce_rate_new',
-        'nb_actions_per_visit_new',
-        'avg_time_on_site_new',
-        'nb_visits_returning',
-        'nb_actions_returning',
-        'nb_uniq_visitors_returning',
-        'nb_users_returning',
-        'max_actions_returning',
-        'bounce_rate_returning',
-        'nb_actions_per_visit_returning',
-        'avg_time_on_site_returning',
-        'Referrers_visitorsFromSearchEngines',
-        'Referrers_visitorsFromSocialNetworks',
-        'Referrers_visitorsFromDirectEntry',
-        'Referrers_visitorsFromWebsites',
-        'Referrers_visitorsFromCampaigns',
-        'Referrers_distinctSearchEngines',
-        'Referrers_distinctSocialNetworks',
-        'Referrers_distinctKeywords',
-        'Referrers_distinctWebsites',
-        'Referrers_distinctWebsitesUrls',
-        'Referrers_distinctCampaigns',
-        'Referrers_visitorsFromDirectEntry_percent',
-        'Referrers_visitorsFromSearchEngines_percent',
-        'Referrers_visitorsFromCampaigns_percent',
-        'Referrers_visitorsFromSocialNetworks_percent',
-        'Referrers_visitorsFromWebsites_percent',
-        'nb_conversions',
-        'nb_visits_converted',
-        'conversion_rate',
-        'nb_conversions_new_visit',
-        'nb_visits_converted_new_visit',
-        'conversion_rate_new_visit',
-        'nb_conversions_returning_visit',
-        'nb_visits_converted_returning_visit',
-        'revenue_returning_visit',
-        'conversion_rate_returning_visit',
-        'nb_pageviews',
-        'nb_uniq_pageviews',
-        'nb_downloads',
-        'nb_uniq_downloads',
-        'nb_outlinks',
-        'nb_uniq_outlinks',
-        'nb_searches',
-        'nb_keywords',
-        'bounce_rate',
-        'nb_actions_per_visit',
-        'avg_time_on_site',
-
-    ];
-
-    foreach ($data as $k => $v) {
-
-        if (in_array($k, $keep)) {
-
-            $filtered[$k] = $v;
-        }
-    }
-
-    return $filtered;
-}
-
-function fill(array $data) {
-
-    $largest_set = [];
-
-    foreach ($data as $index => $set) {
-
-        if (!is_array($set)) {
-
-            dump($set);
-            dump($data);
-            exit;
-        }
-
-        if (count($set) > count($largest_set)) {
-
-            $largest_set = $set;
-        }
-    }
-
-    foreach ($data as $index => $set) {
-
-        if (count($set) < count($largest_set)) {
-
-            $diff = array_diff(array_keys($largest_set), array_keys($set));
-
-            foreach ($diff as $missing) {
-
-                $data[$index][$missing] = '-1';
-            }
-        }
-    }
-
-    return $data;    
-}
-
-function get_segments(Client $client){
-
-    $request  = $client->getRequest()->push(
-
-        new Query(['method' => 'SegmentEditor.getAll'])
-    );
-
-    $data     = retrieve($client, $request);
-    $segments = [];
-
-    foreach ($data['data'] as $segment) {
-
-        $segments[$segment['idsegment']] = $segment;
-    }
-
-    return $data;
-}
 
 /**
  * Reports
@@ -359,32 +183,17 @@ $reports['segments'] = function(Client $client) {
 $segments = get_segments($services->get('client'))['data'];
 $queries  = [];
 
-function getQuery($period, $date, $segment = null) {
-    
-    $query  = new Query(['method' => 'API.get']);
-
-    $query->push('period', $period);
-    $query->push('date',   $date);
-
-    if ($segment) {
-
-        $query->push('segment', $segment);
-    }
-
-    return $query;
-}
-
 foreach ([2016, 2017, 2018, 2019, 2020] as $year) {
 
-    $query  = new Query(['method' => 'API.get']);
-    
     // By week    
 
-    $query->push('period', 'week');
-    $query->push('date',   "{$year}-01-01,{$year}-12-31");
+    $period = 'week';
+    $date   = "{$year}-01-01,{$year}-12-31";
+
+    // By week only
 
     $name           = "{$year}-by-week";
-    $queries[$name] = getQuery('week', "{$year}-01-01,{$year}-12-31");
+    $queries[$name] = getBaseQuery($period, $date);
 
     // By week & segment    
 
@@ -397,24 +206,22 @@ foreach ([2016, 2017, 2018, 2019, 2020] as $year) {
             continue;
         }
 
-        $query  = new Query(['method' => 'API.get']);
         $slug   = preg_replace(
 
             '/[^\w0-9]+/u', '-', $name.'-by-segment-'.strtolower($segment['name'])
         );
 
-        $queries[$slug] = $query->push('segment', $segment['definition']);
+        $queries[$slug] = getBaseQuery($period, $date, $segment['definition']);
     }
 
-    $query  = new Query(['method' => 'API.get']);
+    // By month
 
+    $period = 'month';
+    
     // By month    
 
-    $query->push('period', 'month');
-    $query->push('date',   "{$year}-01-01,{$year}-12-31");
-
     $name           = "{$year}-by-month";
-    $queries[$name] = $query;
+    $queries[$name] = getBaseQuery($period, $date);
 
     // By month & segment    
 
@@ -427,13 +234,12 @@ foreach ([2016, 2017, 2018, 2019, 2020] as $year) {
             continue;
         }
 
-        $query = new Query(['method' => 'API.get']);
         $slug  = preg_replace(
 
             '/[^\w0-9]+/u', '-', $name.'-by-segment-'.strtolower($segment['name'])
         );
 
-        $queries[$slug] = $query->push('segment', $segment['definition']);
+        $queries[$slug] = getBaseQuery($period, $date, $segment['definition']);
     }
 }
 
@@ -455,20 +261,14 @@ foreach ($queries as $name => $query) {
 
             if (strpos($name, 'by-segment') == false) {
 
-                // $data['data'][$period] = filterSegment($set);
+                $data['data'][$period] = filter($set);
             } 
             else {
 
-                // $data['data'][$period] = filterSegment($set);
+                $data['data'][$period] = filterSegment($set);
             }
         }
             
-
-        // Make sure all data sets are equally sized
-        dump($name);
-        dump($data['request']);
-        $data['data'] = fill($data['data']);
-
         // Inject range into sets
 
         foreach ($data['data'] as $period => &$set) {
@@ -478,6 +278,10 @@ foreach ($queries as $name => $query) {
                 $range = explode(',', $period);
                 $set   = array_merge(['from' => $range[0], 'to' => $range[1]], $set);
             }
+            else {
+                
+                $set   = array_merge(['from' => $period], $set);
+            }
         }
 
         return $data;
@@ -486,18 +290,31 @@ foreach ($queries as $name => $query) {
 
 // Execute reports & write results
 
-$writer      = $services->get('writer');
-$logger      = $services->get('logger');
+purgeStorage(
 
-$num_reports = count($reports);
+    STORAGE_DIR,
+    $services->get('fs'), 
+    $services->get('finder')
+);
 
-foreach ($reports as $name => $func) {
+executeReports(
 
-    $data = $func($services->get('client'));
+    $reports, 
+    $services->get('client'), 
+    $services->get('writer'), 
+    $services->get('logger')
+);
 
-    $writer->toJson("{$name}.json", $data['data'])
-           ->toExcelCsv("{$name}.csv", $data['data']);
+purgeExcel(
 
-    $num_reports--;
-    $logger->info("Report {$name} executed and written, {$num_reports} remaining.");
-}
+    STORAGE_DIR,
+    $services->get('fs'), 
+    $services->get('finder')
+);
+
+createExcel(
+
+    STORAGE_DIR,
+    $services->get('fs'), 
+    $services->get('finder')
+);

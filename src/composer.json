@@ -1,13 +1,20 @@
 {
     "autoload": {
-        "psr-4": {"Reporter\\": "sys/library/Reporter"}
+        "psr-4": {
+
+            "Reporter\\": "sys/library/Reporter",
+            "Writer\\": "sys/library/Writer"
+        }
     },
     "require": {
         "symfony/http-client": "^5.2",
         "symfony/config": "^5.2",
         "symfony/yaml": "^5.2",
         "monolog/monolog": "^2.2",
-        "symfony/dependency-injection": "^5.2"
+        "symfony/dependency-injection": "^5.2",
+        "symfony/finder": "^5.2",
+        "symfony/filesystem": "^5.2",
+        "phpoffice/phpspreadsheet": "^1.17"
     },
     "require-dev": {
         "symfony/var-dumper": "^5.2"
