@@ -2,9 +2,6 @@
 
 namespace Reporter;
 
-use Drupal\Core\Config\Config;
-use Drupal\Core\Config\ConfigFactory;
-
 use Symfony\Component\HttpClient\HttpClient;
 
 /**
@@ -12,7 +9,7 @@ use Symfony\Component\HttpClient\HttpClient;
  *
  * Usage:
  *
- * $client   = Drupal::service('matomo_reporter.client');
+ * $client   = new Client($config);
  * $request  = $client->getRequest();
  *
  * // Base query (do not mix with bulk queries)
@@ -75,9 +72,9 @@ class Client {
     /**
      * @param RequestStack
      */
-    public function __construct(ConfigFactory $config) {
+    public function __construct(Config $config) {
 
-        $this->options = $config->get('matomo_reporter.settings');
+        $this->options = $config;
         $this->setClient();
     }
 }

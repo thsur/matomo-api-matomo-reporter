@@ -2,8 +2,6 @@
 
 namespace Reporter;
 
-use Drupal\Core\Config\Config;
-
 class Request {
 
     /**

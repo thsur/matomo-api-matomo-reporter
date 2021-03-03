@@ -46,4 +46,17 @@ class Intervals {
 
         return $weeks;
     }
+
+    public static function lastYears(int $last = 1) {
+
+        $years = [];
+
+        for ($i = 1; $i <= $last; $i++) {
+            
+            $now      = self::now();
+            $years[]  = $now->sub(new DateInterval("P{$i}Y"));            
+        }
+
+        return $years;
+    }
 }

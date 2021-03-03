@@ -118,7 +118,7 @@ class ReportCollector {
      */
     public function __construct(Client $client, string $period = '', string $week = '') {
 
-        $this->client    = $client;
+        $this->client = $client;
 
         $this->setPeriod('week');
         $this->setDate('previous1');
