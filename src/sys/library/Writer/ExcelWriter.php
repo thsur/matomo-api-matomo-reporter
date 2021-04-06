@@ -85,26 +85,26 @@ class ExcelWriter extends Writer{
 
         $headers = $this->getHeaders($tabs);
 
-        // Prepare worksheet
+        // Prepare spreadsheet
 
         $spreadsheet = new Spreadsheet();
 
-        // Create tab
+        // Create worksheets
 
         foreach (array_keys($tabs) as $name) {
 
             $spreadsheet->addSheet(new Worksheet($spreadsheet, "{$name}"));
         }
 
-        // Remove default tab
+        // Remove default tab/worksheet
         
         $spreadsheet->removeSheetByIndex(0);
 
-        // Write data per tab
+        // Write data per tab/worksheet
 
         foreach (array_keys($tabs) as $name) {
 
-            $worksheet = $spreadsheet->setActiveSheetIndexByName($name);
+            $sheet = $spreadsheet->setActiveSheetIndexByName($name);
             
             // Get row counter
 
@@ -112,7 +112,7 @@ class ExcelWriter extends Writer{
 
             // Write headers
 
-            $worksheet->fromArray($headers, null, 'A1');
+            $sheet->fromArray($headers, null, 'A1');
             $row++;
 
             // Write data
@@ -122,7 +122,7 @@ class ExcelWriter extends Writer{
             foreach ($data as $set) {
 
                 $row++;
-                $worksheet->fromArray(array_values($set), null, 'A'.$row);
+                $sheet->fromArray(array_values($set), null, 'A'.$row);
             }
         }
 

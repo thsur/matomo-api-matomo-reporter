@@ -1,5 +1,8 @@
-vendor
-storage
+vendor/
+storage/
+!storage/.gitkeep
+
+settings.yml
 
 .DS_Store
 *.sublime-project
